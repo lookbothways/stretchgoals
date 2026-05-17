@@ -3,7 +3,7 @@
 // the user has connectivity, and the cache still keeps the page working
 // offline. Bump CACHE whenever you change this file.
 
-const CACHE = 'stretch-goals-v3';
+const CACHE = 'stretch-goals-v4';
 const SHELL = [
   './',
   './index.html',

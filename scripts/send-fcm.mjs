@@ -106,16 +106,15 @@ const dead = [];
 
 for (const { uid, token } of matched) {
   try {
+    // Data-only payload — the service worker calls showNotification itself.
+    // Avoids the FCM auto-display path, which can silently swallow web
+    // notifications when icon URLs 404 (project-pages live under /repo/...).
     await msg.send({
       token,
-      notification: { title, body },
+      data: { title, body },
       webpush: {
-        notification: {
-          icon: "/icons/icon-192.png",
-          badge: "/icons/icon-192.png",
-          tag: "stretch-goals"
-        },
-        fcmOptions: { link: "/" }
+        headers: { Urgency: "high" },
+        fcmOptions: { link: "./" }
       }
     });
     ok++;

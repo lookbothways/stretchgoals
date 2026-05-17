@@ -470,10 +470,23 @@ function setupForegroundPush() {
     try { messaging = getMessaging(firebaseApp); } catch { return; }
   }
   onMessage(messaging, payload => {
-    const title = payload?.notification?.title || payload?.data?.title || 'Stretch Goals';
-    const body  = payload?.notification?.body  || payload?.data?.body  || 'Time to stretch.';
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, { body, icon: 'icons/icon-192.png' });
+    // Server sends data-only payloads — read from data, fall back to notification just in case.
+    const data = payload?.data || payload?.notification || {};
+    const title = data.title || 'Stretch Goals';
+    const body  = data.body  || 'Time to stretch.';
+    // Use the SW so behavior matches background pushes (icon path, click target, etc.).
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+          body,
+          icon:  './icons/icon-192.png',
+          badge: './icons/icon-192.png',
+          tag: 'stretch-goals',
+          renotify: true
+        });
+      });
+    } else if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, { body, icon: './icons/icon-192.png' });
     }
     toast(body);
   });
