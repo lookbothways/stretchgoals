@@ -17,9 +17,11 @@ One-time setup. ~20 minutes. Everything stays on the free tier forever.
 
 ## 2. Register the web app
 
-1. Project overview → tap the `</>` (Web) icon → app nickname `stretch-goals-web` → **Register app**.
-2. You'll see a `firebaseConfig` object. Copy `apiKey`, `authDomain`, `projectId`, `appId`, `messagingSenderId`.
-3. Skip the SDK install step. Click **Continue to console**.
+1. Click the **gear icon** at the top of the left rail (next to "Project Overview") → **Project settings**. You'll land on the **General** tab.
+2. Scroll down to **Your apps**. If you haven't added one yet you'll see three platform tiles (iOS / Android / `</>` Web). Click the **`</>` Web** tile.
+3. App nickname: `stretch-goals-web`. Leave "Also set up Firebase Hosting" **unticked**. Click **Register app**.
+4. The `firebaseConfig` snippet appears. Copy `apiKey`, `authDomain`, `projectId`, `appId`, `messagingSenderId`. (`databaseURL` is added in step 4 — you can copy it from the same page later.)
+5. Skip the SDK install instructions. Click **Continue to console**.
 
 ## 3. Enable Anonymous Authentication
 

@@ -1,20 +1,22 @@
 // =======================================================================
-//  EDIT THIS FILE after creating your Firebase project.
-//  Paste values from: Firebase console → Project Settings → General →
-//  "Your apps" → Web app config.
-//  Also paste your VAPID public key from: Cloud Messaging → Web Push certificates.
-//  Set adminUrl to your GitHub Actions page.
+//  Stretch Goals — Firebase config.
+//  Safe to commit. These are public web keys; security is enforced by the
+//  Realtime Database rules in SETUP.md, not by these values.
 // =======================================================================
 
 self.STRETCH_CONFIG = {
   firebase: {
-    apiKey:            "REPLACE_ME_apiKey",
-    authDomain:        "REPLACE_ME.firebaseapp.com",
-    projectId:         "REPLACE_ME",
-    databaseURL:       "https://REPLACE_ME-default-rtdb.firebaseio.com",
-    appId:             "REPLACE_ME_appId",
-    messagingSenderId: "REPLACE_ME_senderId"
+    apiKey:            "AIzaSyB8ufN9YDNuBFYPJq3RsROWsm9tAhRFdNU",
+    authDomain:        "lbwstretchgoals.firebaseapp.com",
+    projectId:         "lbwstretchgoals",
+    // TODO: fill this in after step 4 (Enable Realtime Database). It will
+    // look like https://lbwstretchgoals-default-rtdb.europe-west1.firebasedatabase.app
+    databaseURL:       "BEcxgL3uV1wnFEgq19LKTgezFF4-K0uFgJydD9BfwZkAimFvjZUlU2hYGuWnDUgSqy-1Y79lUBPVeF_GnyLpIw8",
+    appId:             "1:414541520257:web:7dbe1eeea5a60ca2721c80",
+    messagingSenderId: "414541520257"
   },
+  // TODO: from step 5 — Project Settings → Cloud Messaging → Web Push certificates → Generate key pair.
   vapidKey: "REPLACE_ME_vapid_public_key",
-  adminUrl: "https://github.com/REPLACE_ME_user/REPLACE_ME_repo/actions"
+  // TODO: replace YOUR_USER once you've pushed to GitHub.
+  adminUrl: "https://github.com/YOUR_USER/stretchgoals/actions"
 };
