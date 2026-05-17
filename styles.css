@@ -1,0 +1,385 @@
+/* Stretch Goals — clean, senior-friendly white UI */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  color: #111;
+  font-family: 'Roboto', system-ui, -apple-system, Segoe UI, sans-serif;
+  font-size: 18px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  color: #111;
+}
+
+.menu-btn {
+  background: none;
+  border: 0;
+  padding: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.menu-btn span {
+  width: 24px;
+  height: 2px;
+  background: #111;
+  display: block;
+}
+
+/* ---------- Main ---------- */
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 8px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 28px;
+}
+
+/* ---------- Streak block ---------- */
+.streak {
+  text-align: center;
+  margin-top: 8px;
+}
+.streak-count {
+  font-size: 22px;
+  font-weight: 500;
+}
+.streak-count #streak-num {
+  font-weight: 700;
+  font-size: 34px;
+}
+.streak-total {
+  color: #666;
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+/* ---------- The sentence ---------- */
+.sentence {
+  text-align: center;
+  margin: 8px 0 0;
+}
+.sentence p {
+  font-size: 28px;
+  font-weight: 400;
+  margin: 6px 0;
+  line-height: 1.3;
+}
+.sentence strong {
+  font-weight: 700;
+}
+
+.dd {
+  background: none;
+  border: 0;
+  border-bottom: 2px dotted #bbb;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.dd:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 4px;
+}
+.caret {
+  font-size: 18px;
+  color: #999;
+  font-weight: 400;
+}
+
+.next-reminder {
+  font-size: 15px !important;
+  color: #777;
+  margin-top: 18px !important;
+  font-weight: 400;
+}
+
+/* ---------- Done button ---------- */
+.done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 140px;
+  border: 2px solid #111;
+  border-radius: 24px;
+  background: #111;
+  color: #fff;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 80ms ease, background 120ms ease;
+}
+.done:active {
+  transform: scale(0.97);
+  background: #333;
+}
+.done.celebrate {
+  animation: pop 400ms ease;
+}
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.05); background: #2e7d32; }
+  100% { transform: scale(1); }
+}
+.done-tick {
+  font-size: 40px;
+  line-height: 1;
+}
+
+/* ---------- Push status ---------- */
+.push-status {
+  text-align: center;
+}
+.enable {
+  width: 100%;
+  padding: 16px 20px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 2px solid #111;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+}
+.enable:disabled {
+  border-color: #bbb;
+  color: #bbb;
+  cursor: not-allowed;
+}
+.enable.on {
+  background: #e8f5e9;
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+.push-msg {
+  margin-top: 10px;
+  color: #777;
+  font-size: 14px;
+  min-height: 1.2em;
+}
+
+/* ---------- Dialogs / sheets ---------- */
+dialog.sheet {
+  border: 0;
+  padding: 0;
+  border-radius: 20px;
+  background: #fff;
+  color: #111;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  padding: 28px 24px 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+dialog.sheet::backdrop {
+  background: rgba(0,0,0,0.4);
+}
+dialog.sheet h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.sheet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: #f3f3f3;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.picker {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+.picker li { margin: 0; }
+.picker label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 56px;
+  font-size: 17px;
+}
+.picker label:hover { background: #f7f7f7; }
+.picker input[type="radio"],
+.picker input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #111;
+}
+.picker small { color: #888; font-weight: 400; margin-left: 4px; }
+
+.day-picker {
+  margin-top: 4px;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+}
+.day-picker > p {
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+.day-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.day-row label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  position: relative;
+}
+.day-row input { position: absolute; opacity: 0; pointer-events: none; }
+.day-row input:checked + span {
+  background: #111;
+  color: #fff;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  margin: -1px;
+}
+
+.primary {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 0;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.primary:disabled { background: #bbb; }
+
+.big-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 18px 16px;
+  margin: 8px 0;
+  background: #f7f7f7;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  color: #111;
+  text-decoration: none;
+  cursor: pointer;
+}
+.big-link:hover { background: #eee; }
+
+.qr {
+  display: block;
+  width: 220px;
+  height: 220px;
+  margin: 12px auto;
+  background: #f3f3f3;
+  border-radius: 12px;
+}
+
+.footnote {
+  font-size: 13px;
+  color: #888;
+  margin-top: 16px;
+}
+
+.steps {
+  padding-left: 22px;
+  margin: 12px 0 18px;
+}
+.steps li {
+  margin: 10px 0;
+}
+.kbd {
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 14px;
+  background: #fafafa;
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #111;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 15px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+  z-index: 1000;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

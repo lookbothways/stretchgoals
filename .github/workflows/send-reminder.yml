@@ -1,0 +1,52 @@
+name: Send physio reminder
+
+on:
+  workflow_dispatch:
+    inputs:
+      time_slot:
+        description: "Which time slot? (must match what subscribers picked)"
+        required: true
+        type: choice
+        options: [morn, lunch, eve]
+        default: morn
+      title:
+        description: "Notification title (kept short)"
+        required: false
+        default: "Stretch Goals"
+      message:
+        description: "The encouragement message"
+        required: false
+        default: "Time for your physio. Even five minutes counts."
+      dry_run:
+        description: "Dry run? Lists who'd be pinged but sends nothing."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install deps
+        working-directory: scripts
+        run: npm install --omit=dev --no-audit --no-fund
+
+      - name: Send reminder
+        working-directory: scripts
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TIME_SLOT: ${{ inputs.time_slot }}
+          TITLE:    ${{ inputs.title }}
+          MESSAGE:  ${{ inputs.message }}
+          DRY_RUN:  ${{ inputs.dry_run }}
+        run: node send-fcm.mjs

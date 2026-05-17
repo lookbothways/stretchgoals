@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://www.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebaseio.com wss://*.firebasedatabase.app; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; manifest-src 'self';">
+<title>Stretch Goals</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="firebase-config.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="./">Stretch Goals</a>
+  <button class="menu-btn" id="menu-btn" aria-label="Menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<main>
+
+  <!-- "Done" celebration -->
+  <section class="streak" aria-live="polite">
+    <div class="streak-count"><span id="streak-num">0</span><span class="streak-unit"> day streak</span></div>
+    <div class="streak-total">Total sessions: <span id="total-num">0</span></div>
+  </section>
+
+  <!-- The sentence -->
+  <section class="sentence" aria-label="Your reminder schedule">
+    <p>
+      Remind me <button class="dd" id="freq-btn" aria-haspopup="dialog"><strong id="freq-label">daily</strong> <span class="caret">▾</span></button>
+    </p>
+    <p>
+      at <button class="dd" id="time-btn" aria-haspopup="dialog"><strong id="time-label">morning</strong> <span class="caret">▾</span></button>
+    </p>
+    <p class="next-reminder" id="next-reminder">Next reminder: <span id="next-reminder-text">—</span></p>
+  </section>
+
+  <!-- Done button -->
+  <button id="done-btn" class="done">
+    <span class="done-tick">✓</span>
+    <span class="done-text">I&rsquo;ve done my physio</span>
+  </button>
+
+  <!-- Push status / enable -->
+  <section class="push-status" id="push-status">
+    <button id="enable-btn" class="enable">Turn on reminders</button>
+    <p id="push-msg" class="push-msg"></p>
+  </section>
+
+</main>
+
+<!-- ===== Side menu sheet ===== -->
+<dialog id="menu-sheet" class="sheet" aria-label="Menu">
+  <button class="sheet-close" data-close="menu-sheet" aria-label="Close menu">✕</button>
+  <h2>Menu</h2>
+  <button class="big-link" id="qr-link">WhatsApp group QR</button>
+  <a class="big-link" id="admin-link" href="#" target="_blank" rel="noopener">Admin (run reminder)</a>
+  <button class="big-link" id="reset-link">Forget my settings</button>
+  <p class="footnote">Private by design. Nothing about you is stored anywhere except an anonymous reminder schedule.</p>
+</dialog>
+
+<!-- ===== QR sheet ===== -->
+<dialog id="qr-sheet" class="sheet" aria-label="WhatsApp QR">
+  <button class="sheet-close" data-close="qr-sheet" aria-label="Close">✕</button>
+  <h2>Join the WhatsApp group</h2>
+  <p>Scan this with another phone, or tap if you&rsquo;re already on WhatsApp.</p>
+  <img src="whatsapp-qr.png" alt="WhatsApp group QR code" class="qr">
+  <p class="footnote">Replace whatsapp-qr.png with your real QR.</p>
+</dialog>
+
+<!-- ===== Frequency sheet ===== -->
+<dialog id="freq-sheet" class="sheet" aria-label="How often?">
+  <button class="sheet-close" data-close="freq-sheet" aria-label="Close">✕</button>
+  <h2>How often?</h2>
+  <ul class="picker" role="radiogroup" aria-label="Frequency">
+    <li><label><input type="radio" name="freq" value="daily"> <span>Every day</span></label></li>
+    <li><label><input type="radio" name="freq" value="weekends"> <span>Just weekends</span></label></li>
+    <li><label><input type="radio" name="freq" value="mw"> <span>Mondays &amp; Wednesdays</span></label></li>
+    <li><label><input type="radio" name="freq" value="tt"> <span>Tuesdays &amp; Thursdays</span></label></li>
+    <li><label><input type="radio" name="freq" value="wf"> <span>Wednesdays &amp; Fridays</span></label></li>
+    <li><label><input type="radio" name="freq" value="weekly"> <span>Once a week</span></label></li>
+    <li><label><input type="radio" name="freq" value="biweekly"> <span>Every other week</span></label></li>
+  </ul>
+  <div id="day-picker" class="day-picker" hidden>
+    <p>Which day?</p>
+    <div class="day-row" role="radiogroup">
+      <label><input type="radio" name="day" value="mon"><span>Mon</span></label>
+      <label><input type="radio" name="day" value="tue"><span>Tue</span></label>
+      <label><input type="radio" name="day" value="wed"><span>Wed</span></label>
+      <label><input type="radio" name="day" value="thu"><span>Thu</span></label>
+      <label><input type="radio" name="day" value="fri"><span>Fri</span></label>
+      <label><input type="radio" name="day" value="sat"><span>Sat</span></label>
+      <label><input type="radio" name="day" value="sun"><span>Sun</span></label>
+    </div>
+  </div>
+  <button class="primary" id="freq-save">Save</button>
+</dialog>
+
+<!-- ===== Time sheet ===== -->
+<dialog id="time-sheet" class="sheet" aria-label="What time of day?">
+  <button class="sheet-close" data-close="time-sheet" aria-label="Close">✕</button>
+  <h2>What time of day?</h2>
+  <p>Tick any that suit you.</p>
+  <ul class="picker check">
+    <li><label><input type="checkbox" name="time" value="morn"> <span>Morning <small>(9am)</small></span></label></li>
+    <li><label><input type="checkbox" name="time" value="lunch"> <span>Lunchtime <small>(12 noon)</small></span></label></li>
+    <li><label><input type="checkbox" name="time" value="eve"> <span>Evening <small>(6pm)</small></span></label></li>
+  </ul>
+  <button class="primary" id="time-save">Save</button>
+</dialog>
+
+<!-- ===== iOS install walkthrough ===== -->
+<dialog id="ios-sheet" class="sheet" aria-label="Install on iPhone">
+  <button class="sheet-close" data-close="ios-sheet" aria-label="Close">✕</button>
+  <h2>One-off setup on iPhone</h2>
+  <p>To get reminders on your iPhone you need to add this page to your Home Screen first. Then open it from there.</p>
+  <ol class="steps">
+    <li>Tap the <strong>Share</strong> button at the bottom of Safari <span class="kbd">⬆︎</span></li>
+    <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+    <li>Tap <strong>Add</strong> in the top right</li>
+    <li>Open the new <strong>Stretch Goals</strong> icon from your Home Screen</li>
+    <li>Then tap <strong>Turn on reminders</strong></li>
+  </ol>
+  <button class="primary" data-close="ios-sheet">Got it</button>
+</dialog>
+
+<!-- Toast -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

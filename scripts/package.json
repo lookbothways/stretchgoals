@@ -1,0 +1,13 @@
+{
+  "name": "stretch-goals-admin",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Reads subscribers from RTDB and sends FCM pushes that match the chosen day+time slot.",
+  "scripts": {
+    "send": "node send-fcm.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0"
+  }
+}

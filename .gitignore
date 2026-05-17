@@ -1,0 +1,13 @@
+# Never commit a service account key — it goes in a GitHub Actions secret instead.
+*service-account*.json
+*firebase-adminsdk*.json
+serviceAccountKey.json
+
+# Node bits in case you run the admin script locally
+scripts/node_modules/
+scripts/package-lock.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+*.swp
