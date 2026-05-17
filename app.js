@@ -37,6 +37,7 @@ const LS_SCHED   = 'sg.schedule';
 const LS_TOTAL   = 'sg.total';
 const LS_LASTDONE= 'sg.lastdone';   // YYYY-MM-DD
 const LS_STREAK  = 'sg.streak';
+const LS_PUSH_ON = 'sg.pushon';     // '1' once the user has opted in; cleared when they toggle off.
 
 const DEFAULT_SCHED = {
   freq: 'daily',
@@ -300,6 +301,7 @@ async function resetAll() {
   localStorage.removeItem(LS_TOTAL);
   localStorage.removeItem(LS_LASTDONE);
   localStorage.removeItem(LS_STREAK);
+  localStorage.removeItem(LS_PUSH_ON);
   try {
     if (auth?.currentUser && db) {
       await remove(ref(db, `subs/${auth.currentUser.uid}`));
@@ -343,6 +345,17 @@ function bindEnable() {
 }
 
 async function onEnableClick() {
+  const btn = document.getElementById('enable-btn');
+  if (btn.disabled) return;
+  // If currently on, this click means "turn off".
+  if (btn.classList.contains('on')) {
+    return turnOff();
+  }
+  return turnOn();
+}
+
+async function turnOn() {
+  const btn = document.getElementById('enable-btn');
   if (!firebaseApp) {
     toast('Reminders not set up yet on this site. (Owner: fill in firebase-config.js.)');
     return;
@@ -351,6 +364,7 @@ async function onEnableClick() {
     openSheet('ios-sheet');
     return;
   }
+  btn.disabled = true;
   setPushMsg('Asking permission…');
   try {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
@@ -370,18 +384,47 @@ async function onEnableClick() {
     if (!token) { setPushMsg('Could not get a push token.'); return; }
     await ensureAuth();
     await writeSubscription(token);
+    localStorage.setItem(LS_PUSH_ON, '1');
     setPushOn(true);
-    setPushMsg('Reminders are on. You can turn them off in your phone’s settings.');
   } catch (e) {
     console.error(e);
     setPushMsg('Something went wrong: ' + (e?.message || e));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function turnOff() {
+  const btn = document.getElementById('enable-btn');
+  btn.disabled = true;
+  setPushMsg('Turning off…');
+  try {
+    // Delete the FCM token so this device stops receiving pushes.
+    if (messaging) {
+      try { await deleteToken(messaging); } catch (e) { console.warn('deleteToken', e); }
+    }
+    // Remove this device's subscriber row so the admin script won't target it.
+    if (auth?.currentUser && db) {
+      try { await remove(ref(db, `subs/${auth.currentUser.uid}`)); } catch (e) { console.warn('remove sub', e); }
+    }
+    localStorage.removeItem(LS_PUSH_ON);
+    setPushOn(false);
+    setPushMsg('Reminders are off. Tap the button to turn them back on.');
+  } finally {
+    btn.disabled = false;
   }
 }
 
 function setPushOn(on) {
   const b = document.getElementById('enable-btn');
-  if (on) { b.classList.add('on'); b.textContent = '✓ Reminders are on'; }
-  else    { b.classList.remove('on'); b.textContent = 'Turn on reminders'; }
+  if (on) {
+    b.classList.add('on');
+    b.textContent = '✓ Reminders are on — tap to turn off';
+    setPushMsg('You’ll be pinged at the times you’ve picked above.');
+  } else {
+    b.classList.remove('on');
+    b.textContent = 'Turn on reminders';
+  }
 }
 function setPushMsg(t) { document.getElementById('push-msg').textContent = t || ''; }
 
@@ -460,10 +503,12 @@ function init() {
   renderStreak();
   registerAppSW();
 
-  // If permission already granted and we have config, reflect state.
-  if (firebaseApp && 'Notification' in window && Notification.permission === 'granted') {
+  // Reflect saved state. The user is considered "on" only if BOTH the
+  // browser still has permission AND they haven't toggled off in-app.
+  const permGranted = 'Notification' in window && Notification.permission === 'granted';
+  const userWantsOn = localStorage.getItem(LS_PUSH_ON) === '1';
+  if (firebaseApp && permGranted && userWantsOn) {
     setPushOn(true);
-    setPushMsg('Reminders are on.');
     setupForegroundPush();
     ensureAuth().then(() => syncSubscription()).catch(() => {});
   } else if (isIOS() && !isStandalone()) {
