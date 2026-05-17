@@ -16,10 +16,20 @@ if (!CONFIG || !CONFIG.firebase || !CONFIG.firebase.projectId || CONFIG.firebase
   console.warn("[Stretch Goals] firebase-config.js not configured yet. The page still works offline; reminders are disabled until you fill it in.");
 }
 
-const firebaseApp = (CONFIG && CONFIG.firebase && !CONFIG.firebase.projectId.startsWith("REPLACE_ME"))
-  ? initializeApp(CONFIG.firebase) : null;
-const auth = firebaseApp ? getAuth(firebaseApp) : null;
-const db   = firebaseApp ? getDatabase(firebaseApp) : null;
+// Wrap Firebase init in try/catch so a bad config (e.g. swapped values)
+// can't take down the rest of the UI — dropdowns, streak, done button,
+// etc. must keep working even when reminders are misconfigured.
+let firebaseApp = null, auth = null, db = null;
+try {
+  if (CONFIG && CONFIG.firebase && !CONFIG.firebase.projectId.startsWith("REPLACE_ME")) {
+    firebaseApp = initializeApp(CONFIG.firebase);
+    auth = getAuth(firebaseApp);
+    db   = getDatabase(firebaseApp);
+  }
+} catch (e) {
+  console.error("[Stretch Goals] Firebase init failed — reminders are disabled. Check firebase-config.js. Error:", e);
+  firebaseApp = null; auth = null; db = null;
+}
 let messaging = null;
 
 // ----- Local storage keys -----
