@@ -375,7 +375,9 @@ async function turnOn() {
     const supported = await messagingSupported().catch(() => false);
     if (!supported) { setPushMsg('This browser does not support web push.'); return; }
     if (!messaging) messaging = getMessaging(firebaseApp);
-    const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+    // Use the unified sw.js for both caching AND FCM (one SW per scope).
+    const reg = (await navigator.serviceWorker.getRegistration('./sw.js'))
+             || (await navigator.serviceWorker.register('./sw.js'));
     await navigator.serviceWorker.ready;
     const token = await getToken(messaging, {
       vapidKey: CONFIG.vapidKey,
@@ -454,7 +456,7 @@ async function writeSubscription(token) {
 async function syncSubscription() {
   if (!firebaseApp || !auth?.currentUser || !messaging) return;
   try {
-    const reg = await navigator.serviceWorker.getRegistration('./firebase-messaging-sw.js');
+    const reg = await navigator.serviceWorker.getRegistration('./sw.js');
     if (!reg) return;
     const token = await getToken(messaging, { vapidKey: CONFIG.vapidKey, serviceWorkerRegistration: reg });
     if (!token) return;
