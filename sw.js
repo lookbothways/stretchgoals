@@ -11,7 +11,32 @@ importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-com
 importScripts('./firebase-config.js');
 
 const BASE  = self.registration.scope;   // e.g. https://USER.github.io/stretchgoals/
-const CACHE = 'stretch-goals-v5';
+const CACHE = 'stretch-goals-v6';
+
+// ----- IndexedDB helper: read the "done today" flag the page writes. -----
+function _openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('stretch-goals', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('flags');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+function _todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+async function isDoneToday() {
+  try {
+    const db = await _openIDB();
+    return await new Promise(res => {
+      const tx = db.transaction('flags', 'readonly');
+      const req = tx.objectStore('flags').get('doneOn');
+      req.onsuccess = () => res(req.result === _todayKey());
+      req.onerror   = () => res(false);
+    });
+  } catch { return false; }
+}
 const SHELL = [
   './',
   './index.html',
@@ -28,13 +53,14 @@ if (self.STRETCH_CONFIG && self.STRETCH_CONFIG.firebase
     && !self.STRETCH_CONFIG.firebase.projectId.startsWith('REPLACE_ME')) {
   firebase.initializeApp(self.STRETCH_CONFIG.firebase);
   const messaging = firebase.messaging();
-  messaging.onBackgroundMessage(payload => {
+  messaging.onBackgroundMessage(async payload => {
+    if (await isDoneToday()) return; // user already ticked today's box
     const d = payload.data || {};
     return self.registration.showNotification(d.title || 'Stretch Goals', {
       body:  d.body || 'Time to do your physio.',
       icon:  BASE + 'icons/icon-192.png',
       badge: BASE + 'icons/icon-192.png',
-      tag: 'stretch-goals',
+      tag: 'sg-' + Date.now(),  // unique per push so each one dings
       renotify: true,
       data: { url: BASE }
     });
@@ -48,16 +74,17 @@ self.addEventListener('push', event => {
   let payload = {};
   try { payload = event.data.json(); } catch { payload = { data: { body: event.data.text() } }; }
   const d = payload.data || payload.notification || {};
-  event.waitUntil(
-    self.registration.showNotification(d.title || 'Stretch Goals', {
+  event.waitUntil((async () => {
+    if (await isDoneToday()) return; // suppressed: user already done for today
+    return self.registration.showNotification(d.title || 'Stretch Goals', {
       body:  d.body || 'Time to do your physio.',
       icon:  BASE + 'icons/icon-192.png',
       badge: BASE + 'icons/icon-192.png',
-      tag: 'stretch-goals',
+      tag: 'sg-' + Date.now(),
       renotify: true,
       data: { url: BASE }
-    })
-  );
+    });
+  })());
 });
 
 self.addEventListener('notificationclick', event => {

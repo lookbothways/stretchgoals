@@ -27,12 +27,6 @@
 
 <main>
 
-  <!-- "Done" celebration -->
-  <section class="streak" aria-live="polite">
-    <div class="streak-count"><span id="streak-num">0</span><span class="streak-unit"> day streak</span></div>
-    <div class="streak-total">Total sessions: <span id="total-num">0</span></div>
-  </section>
-
   <!-- The sentence -->
   <section class="sentence" aria-label="Your reminder schedule">
     <p>
@@ -47,13 +41,27 @@
   <!-- Done button -->
   <button id="done-btn" class="done">
     <span class="done-tick">✓</span>
-    <span class="done-text">I&rsquo;ve done my physio</span>
+    <span class="done-text">All physio done for the day</span>
   </button>
 
   <!-- Push status / enable -->
   <section class="push-status" id="push-status">
     <button id="enable-btn" class="enable">Turn on reminders</button>
     <p id="push-msg" class="push-msg"></p>
+  </section>
+
+  <hr class="rule">
+
+  <!-- Your stats -->
+  <section class="stats" aria-live="polite">
+    <h3>You</h3>
+    <div class="row">🔥 <strong id="streak-num">0</strong> day streak · Total sessions: <strong id="total-num">0</strong></div>
+  </section>
+
+  <!-- Community stats -->
+  <section class="stats" id="community" aria-live="polite">
+    <h3>Community</h3>
+    <div class="row muted" id="community-row">—</div>
   </section>
 
 </main>

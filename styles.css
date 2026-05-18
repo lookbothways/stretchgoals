@@ -25,8 +25,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 16px 20px 14px;
   padding-top: max(16px, env(safe-area-inset-top));
+  border-bottom: 1px solid #40826D;
 }
 
 .brand {
@@ -66,23 +67,37 @@ main {
   gap: 28px;
 }
 
-/* ---------- Streak block ---------- */
-.streak {
+/* ---------- Section divider ---------- */
+hr.rule {
+  border: 0;
+  border-top: 1px solid #40826D;
+  margin: 8px 0 4px;
+  width: 100%;
+}
+
+/* ---------- Stats blocks (You / Community) ---------- */
+.stats {
   text-align: center;
-  margin-top: 8px;
+  margin: 0;
 }
-.streak-count {
-  font-size: 22px;
+.stats h3 {
+  font-size: 13px;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #888;
+  margin: 0 0 4px;
 }
-.streak-count #streak-num {
+.stats .row {
+  font-size: 17px;
+  color: #222;
+}
+.stats .row strong {
   font-weight: 700;
-  font-size: 34px;
 }
-.streak-total {
-  color: #666;
+.stats .muted {
+  color: #888;
   font-size: 14px;
-  margin-top: 2px;
 }
 
 /* ---------- The sentence ---------- */

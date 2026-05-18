@@ -52,12 +52,27 @@ Authentication → **Get started** → **Sign-in method** tab → **Anonymous** 
         "updatedAt": { ".validate": "newData.isNumber()" },
         "$other":    { ".validate": false }
       }
+    },
+    "stats": {
+      "users": {
+        ".read":  "auth != null",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid",
+          "currentStreak": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 100000" },
+          "totalSessions": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 1000000" },
+          "lastDoneAt":    { ".validate": "newData.isNumber()" },
+          "$other":        { ".validate": false }
+        }
+      }
     }
   }
 }
 ```
 
-These rules say: each device may only write its own row, no one but your service account can read anything, and only those exact fields are accepted. If someone tried to "inject" data, the rules reject it — and there's no PII in there anyway.
+These rules say:
+- **`/subs/{uid}`** — each device can only write its own row, and only your service account can read anything. This is where push tokens and schedules live.
+- **`/stats/users/{uid}`** — each device can write only its own row, but any authenticated visitor can read all rows. Each row holds only three numbers (current streak, total sessions, last-done timestamp); no tokens, no schedules, no identifiers beyond an anonymous UID. The site reads this to show community totals.
+- Only the listed fields are accepted — any "injection" attempt is rejected by the validators.
 
 ## 5. Get the VAPID key
 

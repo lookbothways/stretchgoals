@@ -5,7 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
-import { getDatabase, ref, set, update, remove, serverTimestamp }
+import { getDatabase, ref, set, update, remove, get, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
 import { getMessaging, getToken, deleteToken, onMessage, isSupported as messagingSupported }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging.js";
@@ -171,9 +171,16 @@ function yesterdayKey() {
   d.setDate(d.getDate()-1);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+function liveStreak() {
+  // A streak is "alive" only if the last 'done' was today or yesterday.
+  // Anything older counts as broken — display 0 until they tap again.
+  const last = localStorage.getItem(LS_LASTDONE);
+  const raw  = +(localStorage.getItem(LS_STREAK) || 0);
+  return (last === todayKey() || last === yesterdayKey()) ? raw : 0;
+}
 function renderStreak() {
-  document.getElementById('total-num').textContent = +(localStorage.getItem(LS_TOTAL) || 0);
-  document.getElementById('streak-num').textContent = +(localStorage.getItem(LS_STREAK) || 0);
+  document.getElementById('total-num').textContent  = +(localStorage.getItem(LS_TOTAL) || 0);
+  document.getElementById('streak-num').textContent = liveStreak();
 }
 function logDone() {
   const today = todayKey();
@@ -188,6 +195,30 @@ function logDone() {
   const total = +(localStorage.getItem(LS_TOTAL) || 0) + 1;
   localStorage.setItem(LS_TOTAL, String(total));
   renderStreak();
+  // Persist the "done today" flag in IndexedDB so the service worker can
+  // suppress further notifications until midnight.
+  markDoneTodayIDB().catch(e => console.warn('markDoneTodayIDB', e));
+  // Publish anonymous numbers to the community stats node (best effort).
+  publishCommunityStats(streak, total).catch(e => console.warn('publishCommunityStats', e));
+}
+
+// ----- IndexedDB: "done today" flag, readable from the service worker -----
+function _openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('stretch-goals', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('flags');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+async function markDoneTodayIDB() {
+  const db = await _openIDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('flags', 'readwrite');
+    tx.objectStore('flags').put(todayKey(), 'doneOn');
+    tx.oncomplete = () => res();
+    tx.onerror    = () => rej(tx.error);
+  });
 }
 
 // =====================================================================
@@ -305,10 +336,18 @@ async function resetAll() {
   try {
     if (auth?.currentUser && db) {
       await remove(ref(db, `subs/${auth.currentUser.uid}`));
+      // Also pull their community-stats row so the totals don't carry the orphan.
+      await remove(ref(db, `stats/users/${auth.currentUser.uid}`));
     }
     if (messaging) {
       try { await deleteToken(messaging); } catch {}
     }
+    // Drop the local "done today" flag too.
+    try {
+      const idb = await _openIDB();
+      const tx = idb.transaction('flags', 'readwrite');
+      tx.objectStore('flags').delete('doneOn');
+    } catch {}
   } catch (e) { console.warn(e); }
   closeSheet('menu-sheet');
   toast('All settings forgotten');
@@ -465,27 +504,76 @@ async function syncSubscription() {
 }
 
 // =====================================================================
+//  Community stats — public-readable, anonymous-write
+// =====================================================================
+async function publishCommunityStats(streak, total) {
+  if (!firebaseApp || !db) return;
+  try {
+    await ensureAuth();
+    await set(ref(db, `stats/users/${auth.currentUser.uid}`), {
+      currentStreak: streak,
+      totalSessions: total,
+      lastDoneAt: Date.now()
+    });
+  } catch (e) { console.warn('publishCommunityStats', e); }
+}
+
+async function loadCommunityStats() {
+  if (!firebaseApp || !db) return;
+  try {
+    await ensureAuth();
+    const snap = await get(ref(db, 'stats/users'));
+    const v = snap.val() || {};
+    const now = Date.now();
+    const twoDaysMs = 2 * 24 * 60 * 60 * 1000;
+    let users = 0, liveStreaks = 0, totalSessions = 0;
+    for (const k of Object.keys(v)) {
+      users++;
+      totalSessions += +(v[k].totalSessions || 0);
+      // Only count streaks that are still "alive" (done in the last ~2 days).
+      if (v[k].lastDoneAt && (now - v[k].lastDoneAt) < twoDaysMs) {
+        liveStreaks += +(v[k].currentStreak || 0);
+      }
+    }
+    renderCommunity(users, liveStreaks, totalSessions);
+  } catch (e) { console.warn('loadCommunityStats', e); }
+}
+
+function renderCommunity(users, streaks, total) {
+  const el = document.getElementById('community-row');
+  if (!el) return;
+  if (users === 0) { el.textContent = 'be the first to log a session'; return; }
+  el.classList.remove('muted');
+  el.innerHTML =
+    `<strong>${users}</strong> ${users === 1 ? 'user' : 'users'} · ` +
+    `<strong>${streaks}</strong> streak ${streaks === 1 ? 'day' : 'days'} · ` +
+    `<strong>${total}</strong> total ${total === 1 ? 'session' : 'sessions'}`;
+}
+
+// =====================================================================
 //  Foreground push handling
 // =====================================================================
 function setupForegroundPush() {
   if (!messaging) {
     try { messaging = getMessaging(firebaseApp); } catch { return; }
   }
-  onMessage(messaging, payload => {
+  onMessage(messaging, async payload => {
+    // Suppress today's pushes if the user has already tapped "All physio done".
+    if (localStorage.getItem(LS_LASTDONE) === todayKey()) return;
     // Server sends data-only payloads — read from data, fall back to notification just in case.
     const data = payload?.data || payload?.notification || {};
     const title = data.title || 'Stretch Goals';
     const body  = data.body  || 'Time to stretch.';
-    // Use the SW so behavior matches background pushes (icon path, click target, etc.).
+    // Always show with a unique tag so each push dings fresh, even if the previous is still in the tray.
+    const tag = 'sg-' + Date.now();
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(title, {
-          body,
-          icon:  './icons/icon-192.png',
-          badge: './icons/icon-192.png',
-          tag: 'stretch-goals',
-          renotify: true
-        });
+      const reg = await navigator.serviceWorker.ready;
+      reg.showNotification(title, {
+        body,
+        icon:  './icons/icon-192.png',
+        badge: './icons/icon-192.png',
+        tag,
+        renotify: true
       });
     } else if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(title, { body, icon: './icons/icon-192.png' });
@@ -528,6 +616,13 @@ function init() {
     ensureAuth().then(() => syncSubscription()).catch(() => {});
   } else if (isIOS() && !isStandalone()) {
     setPushMsg('To get reminders on iPhone, add this page to your Home Screen first.');
+  }
+
+  // Community stats. Sign in silently (anonymous) so we can read the public
+  // /stats/users node, then aggregate and render. Best-effort: failures are
+  // logged and ignored.
+  if (firebaseApp) {
+    ensureAuth().then(loadCommunityStats).catch(e => console.warn('community init', e));
   }
 }
 
